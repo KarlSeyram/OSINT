@@ -1,18 +1,25 @@
+import { useEffect, useState } from "react";
 import Head from "next/head";
 import dynamic from "next/dynamic";
+import { supabase } from "@/lib/supabaseClient";
 
-// ✅ Dynamically import PaystackPayment to avoid SSR errors
 const PaystackPayment = dynamic(() => import("../components/PaystackButton"), {
   ssr: false,
 });
 
-
 export default function Upgrade() {
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data?.user);
+    });
+  }, []);
+
   return (
     <>
       <Head>
         <title>Upgrade Your Account</title>
-        <meta name="description" content="Upgrade to premium access with Paystack payment" />
       </Head>
 
       <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
@@ -22,8 +29,7 @@ export default function Upgrade() {
             Unlock all premium tools by paying <span className="font-semibold">GHS 20</span>.
           </p>
 
-          {/* Payment Button */}
-          <PaystackPayment />
+          {user && <PaystackPayment email={user.email} userId={user.id} />}
 
           <p className="mt-4 text-sm text-gray-500">
             You will be redirected after successful payment.
