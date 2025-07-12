@@ -1,69 +1,48 @@
-// src/components/PaystackPayment.tsx
-import { PaystackButton } from "react-paystack";
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+"use client";
+import React from "react";
 import { useRouter } from "next/router";
+import { PaystackButton } from "react-paystack";
+import { supabase } from "@/lib/supabaseClient";
 
-export default function PaystackPayment() {
-  const [email, setEmail] = useState("");
+const PaystackPayment = ({ email, userId }: { email: string, userId: string }) => {
   const router = useRouter();
 
-  // Get current user email from Supabase
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        setEmail(user.email || "");
-      }
-    });
-  }, []);
+  const publicKey = "pk_live_your_key_here"; // Replace with real key
+  const amount = 2000 * 100;
 
-  const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!;
-  const amount = 2000 * 100; // 2000 pesewas = GHS 20
-  const reference = `${Date.now()}`;
-
-  const onSuccess = async (ref: any) => {
+  const handleSuccess = async (ref: any) => {
     try {
-      // Call your backend to verify payment
-      const response = await fetch("/api/verify-payment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reference: ref.reference }),
-      });
+      // 1. Store payment info
+      await supabase.from("payments").insert([
+        {
+          user_id: userId,
+          email,
+          amount,
+          reference: ref.reference,
+        },
+      ]);
 
-      const data = await response.json();
+      // 2. Mark user as premium
+      await supabase.from("profiles").update({ is_premium: true }).eq("id", userId);
 
-      if (data.success) {
-        alert("✅ Payment successful! Premium access granted.");
-        router.push("/dashboard");
-      } else {
-        alert("❌ Payment failed to verify.");
-      }
+      // 3. Redirect
+      router.push("/dashboard");
     } catch (error) {
-      console.error("Verification error", error);
-      alert("❌ Something went wrong while verifying payment.");
+      console.error("Payment update error:", error);
+      alert("Payment went through, but something went wrong saving your premium access.");
     }
   };
 
-  const onClose = () => {
-    alert("❌ Payment popup closed.");
+  const componentProps = {
+    email,
+    amount,
+    publicKey,
+    text: "Pay GHS 20",
+    onSuccess: handleSuccess,
+    onClose: () => alert("Payment closed"),
   };
 
-  return (
-    <div className="flex justify-center">
-      {email ? (
-        <PaystackButton
-          email={email}
-          amount={amount}
-          publicKey={publicKey}
-          text="Pay GHS 20 Now"
-          onSuccess={onSuccess}
-          onClose={onClose}
-          reference={reference}
-          className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition"
-        />
-      ) : (
-        <p className="text-red-500">Please login to make payment.</p>
-      )}
-    </div>
-  );
-}
+  return <PaystackButton {...componentProps} />;
+};
+
+export default PaystackPayment;
