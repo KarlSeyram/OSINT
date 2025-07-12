@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 const PaystackPayment = ({ email, userId }: { email: string, userId: string }) => {
   const router = useRouter();
 
-  const publicKey = "pk_live_your_key_here"; // Replace with real key
+  const publicKey = "pk_live_d94cc6d8172b21877e7e7893283dd2ecd49e897d"; // Paystack public live key
   const amount = 2000 * 100;
 
   const handleSuccess = async (ref: any) => {
