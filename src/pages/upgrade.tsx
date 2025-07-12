@@ -1,5 +1,11 @@
 import Head from "next/head";
-import PaystackPayment from "../components/PaystackButton"; // ✅ static import
+import dynamic from "next/dynamic";
+
+// ✅ Dynamically import PaystackPayment to avoid SSR errors
+const PaystackPayment = dynamic(() => import("../components/PaystackButton"), {
+  ssr: false,
+});
+
 
 export default function Upgrade() {
   return (
